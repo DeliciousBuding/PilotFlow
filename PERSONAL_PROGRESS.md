@@ -53,9 +53,10 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 | 群消息发送 | ✅ | lark_oapi im message create |
 | @mention（群消息） | ✅ | 解析群成员 open_id，<at> 标签 |
 | @mention（文档内） | ✅ | docx mention_user 元素 |
+| 权限自管理 | ✅ | 链接可查看 + 群成员自动加编辑权限 |
+| 多维表格自建 | ✅ | 自动创建表格、字段、记录、权限 |
 | LLM 意图理解 | ✅ | mimo-v2.5-pro + pilotflow skill |
-| 端到端群聊触发 | ✅ | Hermes gateway WebSocket |
-| 多维表格写入 | ❌ | bot 缺 bitable 权限 |
+| 端到端群聊触发 | ✅ | Hermes gateway WebSocket，~30秒 5个产物 |
 | 确认门控 | 🔧 | 工具层指令已写，需 gateway 卡片支持 |
 
 ## 技术决策
