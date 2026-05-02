@@ -196,8 +196,62 @@ def _create_doc(title: str, markdown_content: str) -> Optional[str]:
         return None
 
 
+def _make_text_elements(text: str):
+    """Create TextElement list from plain text, preserving <at> tags."""
+    from lark_oapi.api.docx.v1 import TextElement, TextRun
+    # Simple: one TextRun per line content
+    return [TextElement.builder().text_run(TextRun.builder().content(text).build()).build()]
+
+
+def _markdown_to_blocks(markdown: str):
+    """Convert markdown text to a list of Feishu docx Block objects."""
+    from lark_oapi.api.docx.v1 import Block, Text, TextElement, TextRun
+
+    lines = markdown.split("\n")
+    blocks = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        # Heading: # ## ###
+        if stripped.startswith("### "):
+            content = stripped[4:]
+            heading = Text.builder().elements(_make_text_elements(content)).build()
+            blocks.append(Block.builder().block_type(5).heading3(heading).build())
+        elif stripped.startswith("## "):
+            content = stripped[3:]
+            heading = Text.builder().elements(_make_text_elements(content)).build()
+            blocks.append(Block.builder().block_type(4).heading2(heading).build())
+        elif stripped.startswith("# "):
+            content = stripped[2:]
+            heading = Text.builder().elements(_make_text_elements(content)).build()
+            blocks.append(Block.builder().block_type(3).heading1(heading).build())
+        # Bullet list: - or *
+        elif stripped.startswith("- ") or stripped.startswith("* "):
+            content = stripped[2:]
+            bullet_text = Text.builder().elements(_make_text_elements(content)).build()
+            blocks.append(Block.builder().block_type(12).bullet(bullet_text).build())
+        # Ordered list: 1. 2. etc.
+        elif len(stripped) > 2 and stripped[0].isdigit() and stripped.find(". ") > 0:
+            idx = stripped.find(". ")
+            content = stripped[idx + 2:]
+            ordered_text = Text.builder().elements(_make_text_elements(content)).build()
+            blocks.append(Block.builder().block_type(13).ordered(ordered_text).build())
+        # Divider: ---
+        elif stripped in ("---", "***", "___"):
+            blocks.append(Block.builder().block_type(22).divider({}).build())
+        # Normal text
+        else:
+            text = Text.builder().elements(_make_text_elements(stripped)).build()
+            blocks.append(Block.builder().block_type(2).text(text).build())
+
+    return blocks
+
+
 def _write_doc_content(doc_id: str, markdown: str):
-    """Write markdown content to a Feishu document."""
+    """Write markdown content to a Feishu document with proper formatting."""
     client = _get_client()
     if not client:
         return
@@ -205,30 +259,9 @@ def _write_doc_content(doc_id: str, markdown: str):
         from lark_oapi.api.docx.v1 import (
             CreateDocumentBlockChildrenRequest,
             CreateDocumentBlockChildrenRequestBody,
-            Block,
-            Text,
-            TextElement,
-            TextRun,
         )
 
-        # Split markdown into paragraphs and create text blocks
-        lines = markdown.split("\n")
-        children = []
-        for line in lines:
-            if not line.strip():
-                continue
-            # Create a text block for each line
-            text_run = TextRun.builder().content(line.strip()).build()
-            text_element = TextElement.builder().text_run(text_run).build()
-            text = Text.builder().elements([text_element]).build()
-            block = (
-                Block.builder()
-                .block_type(2)  # text block
-                .text(text)
-                .build()
-            )
-            children.append(block)
-
+        children = _markdown_to_blocks(markdown)
         if not children:
             return
 
