@@ -59,6 +59,43 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 - 新增 AGENTS.md 供 Claude Code agent 使用
 - plugin.yaml 版本同步至 0.9.0
 
+### 第六阶段：深度审计修复（v0.9.1）
+
+基于 Hermes 源码和飞书 SDK 源码的三方审计，修复所有确认的 bug：
+
+**Hermes 集成修复：**
+- `get_session_env()` 调用签名修正（原来缺参数，永远走 env fallback）
+- `_hermes_send` 成功检测逻辑重写（registry 返回 `{"error": ...}` 表示失败）
+- lark_oapi client 增加 10 秒超时，防止 gateway 线程阻塞
+- `_check_available` 结果缓存，避免重复 import
+
+**线程安全修复：**
+- `_member_cache` 加独立锁 `_member_cache_lock`
+- `_evict_caches` 中变量作用域修复（`expired_plans` 初始化）
+
+**错误处理增强：**
+- `_add_editors` 每个成员的 permission create 检查响应并记录失败
+- `_create_bitable` 字段创建检查响应
+- `_add_editors` 成员数上限 20，防止无界 API 调用
+- `_resolve_member` 增加 `resp.data` 空值检查
+- `_hermes_send` 增加类型安全（`isinstance(result, str)`）
+
+**SDK 修复：**
+- 分隔线 Divider 使用正确的 `DocDivider.builder().build()` 而非 `{}`
+- 日历事件增加 `calendar_id("primary")` 参数
+
+**数据修复：**
+- 多维表格中负责人字段使用纯文本，不再混入 `@mention` XML 标记
+- 新增 `_member_names_plain()` 辅助函数
+
+**产品修复：**
+- 工具描述全面加强（写明参数格式、前置条件、LLM 行为指引）
+- 移除确认卡片中无回调处理的按钮（防止用户点击无响应）
+- SKILL.md 移除冗余的 send_summary 步骤
+- INSTALL.md 补全缺失的飞书权限（bitable/drive/calendar）
+- INSTALL.md 修复验证命令（加 sys.path）
+- INSTALL.md 统一模型名为 gpt-5.5
+
 ## 已验证能力
 
 | 能力 | 状态 | 技术实现 |
@@ -93,10 +130,11 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 ```
 PilotFlow/
 ├── plugins/pilotflow/      # 核心插件（tools.py + __init__.py + plugin.yaml）
-├── skills/pilotflow/       # Hermes skill（DESCRIPTION.md 引导 LLM 工作流）
-├── docs/                   # 产品规格、架构设计
+├── skills/pilotflow/       # Hermes skill（SKILL.md + DESCRIPTION.md）
+├── docs/                   # 产品规格、架构设计、创新点
 ├── README.md / README_EN.md
 ├── INSTALL.md
+├── AGENTS.md               # Claude Code agent 上下文
 ├── PERSONAL_PROGRESS.md
 └── .env.example
 ```
