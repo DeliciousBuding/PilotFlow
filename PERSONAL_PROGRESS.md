@@ -127,6 +127,14 @@ Hermes memory 集成 + 结构化计划输出 + schema 加固：
 - README 竞品对比表新增「学习能力」行，路线图更新至 Phase 5 完成
 - INNOVATION.md/PRODUCT_SPEC.md 同步更新
 
+### 第九阶段：文档同步 + 代码清理（v1.0.1-v1.0.2）
+
+- `_pending_plans` 增加过期清理（与 `_plan_generated` 同步驱逐）
+- README_EN.md 竞品对比表新增 Learning/memory 行
+- README_EN.md 路线图 Phase 4-5 更新为已完成
+- README_EN.md 核心优势表新增 "Gets Smarter" 行
+- 删除 `_build_confirmation_card` 死代码（按钮移除后不再使用）
+
 ## 已验证能力
 
 | 能力 | 状态 | 技术实现 |
