@@ -39,8 +39,12 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 完整链路跑通：
 ```
 飞书群 @PilotFlow → Hermes gateway 收消息 → LLM 理解意图
-→ 调用 pilotflow_create_project_space → 创建飞书文档 + 任务 + 群消息
+→ 调用 pilotflow_create_project_space → 创建飞书文档 + 多维表格 + 任务 + 群消息
 → bot 回复用户，~30秒完成
+
+多轮管理：
+飞书群 @PilotFlow → "把答辩项目的截止时间改成5月10日"
+→ LLM 调用 pilotflow_update_project → 发送更新通知
 ```
 
 ## 已验证能力
