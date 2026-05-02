@@ -4,7 +4,7 @@
 
 PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 说一句需求，LLM 自动理解意图，调用飞书 API 创建真实文档、任务和项目入口消息。
 
-**技术栈**：Hermes Agent（Python）+ lark_oapi SDK + mimo-v2.5-pro
+**技术栈**：Hermes Agent（Python）+ lark_oapi SDK + gpt-5.5
 
 ## 开发历程
 
@@ -23,7 +23,7 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 - 研究 Hermes 源码，理解插件注册、工具调度、飞书网关机制
 - 用 `ctx.register_tool()` 注册 4 个 PilotFlow 工具
 - 配置 Hermes gateway 连接飞书 WebSocket
-- 配置 mimo-v2.5-pro 作为 LLM（通过 vectorcontrol API）
+- 配置 gpt-5.5 作为 LLM（通过 vectorcontrol API）
 
 ### 第三阶段：插件完善（5月2日）
 
