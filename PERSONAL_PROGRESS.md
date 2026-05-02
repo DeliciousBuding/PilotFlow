@@ -1,56 +1,92 @@
 # 个人进度 — PilotFlow
 
-## 项目概述
+## 项目定位
 
-PilotFlow 是飞书群聊中的 AI 项目运行官。基于 Hermes Agent 运行时，通过 lark_oapi SDK 直连飞书 API，实现一句话创建项目空间。
+PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 说一句需求，LLM 自动理解意图，调用飞书 API 创建真实文档、任务和项目入口消息。
 
-## 当前状态（2026-05-02）
+**技术栈**：Hermes Agent（Python）+ lark_oapi SDK + mimo-v2.5-pro
 
-### 已完成
+## 开发历程
 
-**插件架构（v0.2）**
-- 基于 Hermes Agent 运行时的即插即用插件
-- lark_oapi SDK 直连飞书 API，不依赖 lark-cli
-- 4 个核心工具：generate_plan、detect_risks、create_project_space、send_summary
+### 第一阶段：原型验证（4月）
 
-**飞书能力**
-- 飞书文档创建：支持 markdown 格式化（标题、列表、分隔线）
-- 飞书任务创建：自动创建带负责人的任务
-- 群消息发送：项目入口消息、交付总结
-- @mention 支持：文档内和群消息中自动 @提及成员
-- 文档权限：创建后自动开放链接访问权限
+最初用 TypeScript 自建 Agent，实现了确定性计划解析和飞书工具调用。通过飞书群实测发现核心问题：
+- 没有 LLM 接入，本质是脚本而非 AI
+- 确认门控未生效，消息一次性全部发出
+- 中英文混杂，产品化程度不足
 
-**端到端验证**
-- Hermes gateway → LLM (mimo-v2.5-pro) → PilotFlow 工具 → 飞书产物
-- 飞书群聊 @PilotFlow 触发 → 自动创建文档+任务+消息
-- 全流程 ~17 秒完成
+**关键决策**：放弃自建 Agent，转向 Hermes Agent 运行时。
 
-**已验证的飞书能力**
+### 第二阶段：架构重构（5月初）
 
-| 能力 | 状态 | 说明 |
+将项目从 TypeScript 自建 Agent 重构为 Hermes Python 插件：
+- 研究 Hermes 源码，理解插件注册、工具调度、飞书网关机制
+- 用 `ctx.register_tool()` 注册 4 个 PilotFlow 工具
+- 配置 Hermes gateway 连接飞书 WebSocket
+- 配置 mimo-v2.5-pro 作为 LLM（通过 vectorcontrol API）
+
+### 第三阶段：插件完善（5月2日）
+
+从 lark-cli 子进程调用迁移到 lark_oapi SDK 直连：
+- 修复工具 handler 签名（`**kwargs` 兼容 Hermes 注入的 `task_id`）
+- 新增 @mention 支持（解析群成员列表，文档内 mention_user 元素）
+- 文档格式化写入（markdown → 飞书 block_type：标题、列表、分隔线）
+- 创建文档后自动开放链接访问权限
+- 排查 gateway 消息接收问题（FEISHU_GROUP_POLICY=open）
+
+### 第四阶段：端到端验证
+
+完整链路跑通：
+```
+飞书群 @PilotFlow → Hermes gateway 收消息 → LLM 理解意图
+→ 调用 pilotflow_create_project_space → 创建飞书文档 + 任务 + 群消息
+→ bot 回复用户，~17秒完成
+```
+
+## 已验证能力
+
+| 能力 | 状态 | 技术实现 |
 | --- | --- | --- |
-| 飞书文档创建 | ✅ | 格式化 markdown，自动开权限 |
-| 飞书任务创建 | ✅ | lark_oapi SDK |
-| 群消息发送 | ✅ | 文本消息 + @mention |
-| @mention 解析 | ✅ | 自动解析群成员名称 |
-| 文档内 @mention | ✅ | mention_user 元素 |
-| 多维表格写入 | ❌ | 需要 bot 加 bitable 权限 |
-| 确认门控 | 🔧 | 工具层已实现，需 gateway 交互卡片支持 |
-
-### 待完成
-
-1. 多维表格写入权限配置
-2. 确认门控的交互卡片实现
-3. 运行记录日志
-4. 演示视频录制
-5. 截图制作
-6. 竞赛提交
+| 飞书文档创建 | ✅ | lark_oapi docx API，markdown 格式化 |
+| 文档权限自动开放 | ✅ | drive permission_public.patch |
+| 飞书任务创建 | ✅ | lark_oapi task v2 API |
+| 群消息发送 | ✅ | lark_oapi im message create |
+| @mention（群消息） | ✅ | 解析群成员 open_id，<at> 标签 |
+| @mention（文档内） | ✅ | docx mention_user 元素 |
+| LLM 意图理解 | ✅ | mimo-v2.5-pro + pilotflow skill |
+| 端到端群聊触发 | ✅ | Hermes gateway WebSocket |
+| 多维表格写入 | ❌ | bot 缺 bitable 权限 |
+| 确认门控 | 🔧 | 工具层指令已写，需 gateway 卡片支持 |
 
 ## 技术决策
 
-| 决策 | 原因 |
-| --- | --- |
-| 用 lark_oapi SDK 替代 lark-cli | 减少外部依赖，即插即用 |
-| 基于 Hermes Agent 运行时 | 不重复造轮子，利用 LLM + 工具调度 |
-| mimo-v2.5-pro 模型 | 中文理解能力强，适合飞书场景 |
-| Python 而非 TypeScript | Hermes 生态全 Python，插件保持一致 |
+| 决策 | 原因 | 权衡 |
+| --- | --- | --- |
+| 基于 Hermes 而非自建 | 不重复造轮子，LLM + 工具调度开箱即用 | 受限于 Hermes 架构 |
+| lark_oapi SDK 而非 lark-cli | 零外部依赖，即插即用 | 需自己处理 API 错误 |
+| Python 而非 TypeScript | Hermes 生态全 Python | 放弃旧 TS 代码 |
+| mimo-v2.5-pro | 中文理解好，API 免费 | 偶尔不调工具（模型行为） |
+| 插件而非 fork | 不改 Hermes 代码，cp -r 安装 | 无法修改 gateway 行为 |
+
+## 项目结构
+
+```
+PilotFlow/
+├── plugins/pilotflow/      # 核心插件（tools.py + __init__.py + plugin.yaml）
+├── skills/pilotflow/       # Hermes skill（DESCRIPTION.md 引导 LLM 工作流）
+├── docs/                   # 产品规格、架构设计
+├── README.md / README_EN.md
+├── INSTALL.md
+├── PERSONAL_PROGRESS.md
+└── .env.example
+```
+
+## 待完成
+
+| 优先级 | 任务 | 说明 |
+| --- | --- | --- |
+| P0 | 演示视频 | 录制飞书群 @PilotFlow 全流程 |
+| P0 | 截图 | 群聊、文档、任务截图 |
+| P1 | 竞赛提交 | 5月7日 12:00 截止 |
+| P2 | 多维表格权限 | 给 bot 加 bitable 写入权限 |
+| P2 | 确认门控卡片 | 飞书互动卡片 + 按钮确认 |
