@@ -135,13 +135,22 @@ Hermes memory 集成 + 结构化计划输出 + schema 加固：
 - README_EN.md 核心优势表新增 "Gets Smarter" 行
 - 删除 `_build_confirmation_card` 死代码（按钮移除后不再使用）
 
+### 第十阶段：任务深化（v1.1）
+
+飞书任务从占位符升级为有意义的项目管理实体：
+- `_create_task` 新增 `assignee_name`、`deadline`、`chat_id` 参数
+- 任务创建时自动解析成员 → open_id，设置负责人
+- 任务截止时间设为 deadline 当天 18:00（UTC+8）
+- 交付物与成员轮询分配（round-robin）
+- 新字段用 try/except 保护，SDK 不支持时优雅降级
+
 ## 已验证能力
 
 | 能力 | 状态 | 技术实现 |
 | --- | --- | --- |
 | 飞书文档创建 | ✅ | lark_oapi docx API，markdown 格式化 |
 | 文档权限自动开放 | ✅ | drive permission_public.patch |
-| 飞书任务创建 | ✅ | lark_oapi task v2 API |
+| 飞书任务创建 | ✅ | lark_oapi task v2 API，负责人分配 + 截止时间 |
 | 群消息发送 | ✅ | lark_oapi im message create |
 | @mention（群消息） | ✅ | 解析群成员 open_id，<at> 标签 |
 | @mention（文档内） | ✅ | docx mention_user 元素 |
