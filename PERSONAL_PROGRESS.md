@@ -116,6 +116,17 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 - 日历事件修复为 9:00 AM 开始、1 小时时长（原来零时长）
 - 新增 15 个单元测试（模板检测、成员格式化、注册表、确认门控、缓存驱逐）
 
+### 第八阶段：Hermes 深度融合（v1.0）
+
+Hermes memory 集成 + 结构化计划输出 + schema 加固：
+- `_save_to_hermes_memory`: 项目创建时通过 `registry.dispatch("memory")` 保存项目模式
+- LLM 下次创建项目时可参考历史模式，自动建议成员和交付物
+- `_handle_generate_plan` 返回结构化 `plan` 对象（含模板预填充的交付物和截止时间）
+- `create_project_space` schema 的 `required` 增加 `members` 和 `deliverables`
+- `_pending_plans` 存储计划参数，防止 LLM 参数幻觉
+- README 竞品对比表新增「学习能力」行，路线图更新至 Phase 5 完成
+- INNOVATION.md/PRODUCT_SPEC.md 同步更新
+
 ## 已验证能力
 
 | 能力 | 状态 | 技术实现 |
@@ -134,6 +145,7 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 | 项目模板识别 | ✅ | 答辩/sprint/活动/上线 模板自动建议 |
 | 项目状态查询 | ✅ | 内存项目注册表 + 飞书任务 API 双源查询 |
 | 多轮项目更新 | ✅ | 注册表更新 + 多维表格 record.update + 群通知 |
+| Hermes Memory 集成 | ✅ | registry.dispatch("memory") 保存项目模式 |
 | 消息走 Hermes | ✅ | registry.dispatch("send_message") |
 
 ## 技术决策
