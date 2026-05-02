@@ -121,13 +121,15 @@ def _format_members(members: List[str]) -> str:
 # Feishu API wrappers
 # ---------------------------------------------------------------------------
 
+import time
+
+
 def _send_message(chat_id: str, text: str) -> bool:
-    """Send a text message to a Feishu chat."""
+    """Send a text message to a Feishu chat. Retries once on failure."""
     client = _get_client()
     if not client:
         return False
     try:
-        import lark_oapi as lark
         from lark_oapi.api.im.v1 import (
             CreateMessageRequest,
             CreateMessageRequestBody,
@@ -146,11 +148,14 @@ def _send_message(chat_id: str, text: str) -> bool:
             .request_body(body)
             .build()
         )
-        resp = client.im.v1.message.create(req)
-        if resp.success():
-            logger.info("message sent to %s", chat_id)
-            return True
-        logger.warning("send message failed: %s", resp.msg)
+        for attempt in range(2):
+            resp = client.im.v1.message.create(req)
+            if resp.success():
+                logger.info("message sent to %s", chat_id)
+                return True
+            logger.warning("send message attempt %d failed: %s", attempt + 1, resp.msg)
+            if attempt == 0:
+                time.sleep(1)
         return False
     except Exception as e:
         logger.warning("send message error: %s", e)
@@ -312,7 +317,7 @@ def _write_doc_content(doc_id: str, markdown: str):
 
 
 def _create_task(summary: str, description: str) -> bool:
-    """Create a Feishu task."""
+    """Create a Feishu task. Retries once on failure."""
     client = _get_client()
     if not client:
         return False
@@ -329,11 +334,14 @@ def _create_task(summary: str, description: str) -> bool:
             .build()
         )
         req = CreateTaskRequest.builder().request_body(task).build()
-        resp = client.task.v2.task.create(req)
-        if resp.success():
-            logger.info("task created: %s", summary)
-            return True
-        logger.warning("create task failed: %s", resp.msg)
+        for attempt in range(2):
+            resp = client.task.v2.task.create(req)
+            if resp.success():
+                logger.info("task created: %s", summary)
+                return True
+            logger.warning("create task attempt %d failed: %s", attempt + 1, resp.msg)
+            if attempt == 0:
+                time.sleep(1)
         return False
     except Exception as e:
         logger.warning("create task error: %s", e)
@@ -341,7 +349,7 @@ def _create_task(summary: str, description: str) -> bool:
 
 
 def _create_base_record(title: str, owner: str, deadline: str, risks: list) -> bool:
-    """Write a record to Feishu Bitable."""
+    """Write a record to Feishu Bitable. Retries once on failure."""
     client = _get_client()
     if not client or not BASE_TOKEN or not BASE_TABLE_ID:
         return False
@@ -371,11 +379,15 @@ def _create_base_record(title: str, owner: str, deadline: str, risks: list) -> b
             .request_body(record)
             .build()
         )
-        resp = client.bitable.v1.app_table_record.create(req)
-        if resp.success():
-            logger.info("base record created")
-            return True
-        logger.warning("create base record failed: %s", resp.msg)
+        for attempt in range(2):
+            resp = client.bitable.v1.app_table_record.create(req)
+            if resp.success():
+                logger.info("base record created")
+                return True
+            logger.warning("create base record attempt %d failed: %s (code=%s)",
+                           attempt + 1, resp.msg, getattr(resp, 'code', '?'))
+            if attempt == 0:
+                time.sleep(1)
         return False
     except Exception as e:
         logger.warning("create base record error: %s", e)
@@ -390,7 +402,7 @@ PILOTFLOW_GENERATE_PLAN_SCHEMA = {
     "name": "pilotflow_generate_plan",
     "description": (
         "从用户的自然语言输入中提取项目信息，生成结构化的项目执行计划。"
-        "返回目标、成员、交付物、截止时间和风险。"
+        "返回提取结果和确认门控指令。必须在用户确认后才能执行创建操作。"
     ),
     "parameters": {
         "type": "object",
@@ -405,7 +417,7 @@ PILOTFLOW_GENERATE_PLAN_SCHEMA = {
 }
 
 
-def _handle_generate_plan(params: Dict[str, Any]) -> str:
+def _handle_generate_plan(params: Dict[str, Any], **kwargs) -> str:
     """Parse user input and return a structured project plan."""
     text = params.get("input_text", "")
 
@@ -413,7 +425,18 @@ def _handle_generate_plan(params: Dict[str, Any]) -> str:
         "status": "plan_generated",
         "input": text,
         "instructions": (
-            "请根据以上输入生成项目执行计划，然后调用 pilotflow_create_project_space 创建产物。"
+            "请根据以上输入提取项目信息（目标、成员、交付物、截止时间），然后：\n\n"
+            "1. 向用户展示执行计划（用中文，格式清晰）：\n"
+            "   📋 执行计划\n"
+            "   目标：xxx\n"
+            "   成员：xxx\n"
+            "   交付物：xxx\n"
+            "   截止时间：xxx\n"
+            "   风险：xxx（如有）\n\n"
+            "2. 询问用户：「确认执行？」\n\n"
+            "3. 等待用户明确回复「确认」「确认执行」「可以」等肯定词\n\n"
+            "4. 用户确认后，调用 pilotflow_create_project_space 创建产物\n\n"
+            "⚠️ 重要：不要跳过确认步骤，不要自行执行。"
         ),
     }, ensure_ascii=False))
 
@@ -451,7 +474,7 @@ PILOTFLOW_DETECT_RISKS_SCHEMA = {
 }
 
 
-def _handle_detect_risks(params: Dict[str, Any]) -> str:
+def _handle_detect_risks(params: Dict[str, Any], **kwargs) -> str:
     """Detect risks in a project plan."""
     members = params.get("members", [])
     deliverables = params.get("deliverables", [])
@@ -521,7 +544,7 @@ PILOTFLOW_CREATE_PROJECT_SPACE_SCHEMA = {
 }
 
 
-def _handle_create_project_space(params: Dict[str, Any]) -> str:
+def _handle_create_project_space(params: Dict[str, Any], **kwargs) -> str:
     """Create a complete project space in Feishu."""
     title = params.get("title", "项目")
     goal = params.get("goal", "")
@@ -610,7 +633,7 @@ PILOTFLOW_SEND_SUMMARY_SCHEMA = {
 }
 
 
-def _handle_send_summary(params: Dict[str, Any]) -> str:
+def _handle_send_summary(params: Dict[str, Any], **kwargs) -> str:
     """Send a delivery summary to the Feishu group."""
     title = params.get("title", "")
     artifacts = params.get("artifacts", [])
