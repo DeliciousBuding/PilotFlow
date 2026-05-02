@@ -112,7 +112,7 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 | 端到端群聊触发 | ✅ | Hermes gateway WebSocket，~30秒 5个产物 |
 | 确认门控 | ✅ | 代码级拦截 + 线程安全 + 按群聊隔离 |
 | 项目模板识别 | ✅ | 答辩/sprint/活动/上线 模板自动建议 |
-| 项目状态查询 | ✅ | pilotflow_query_status 工具 |
+| 项目状态查询 | ✅ | 内存项目注册表 + 飞书任务 API 双源查询 |
 | 消息走 Hermes | ✅ | registry.dispatch("send_message") |
 
 ## 技术决策
