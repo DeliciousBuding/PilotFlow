@@ -55,9 +55,12 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 | @mention（文档内） | ✅ | docx mention_user 元素 |
 | 权限自管理 | ✅ | 链接可查看 + 群成员自动加编辑权限 |
 | 多维表格自建 | ✅ | 自动创建表格、字段、记录、权限 |
-| LLM 意图理解 | ✅ | mimo-v2.5-pro + pilotflow skill |
+| LLM 意图理解 | ✅ | gpt-5.5 + pilotflow skill |
 | 端到端群聊触发 | ✅ | Hermes gateway WebSocket，~30秒 5个产物 |
-| 确认门控 | 🔧 | 工具层指令已写，需 gateway 卡片支持 |
+| 确认门控 | ✅ | 代码级拦截 + 线程安全 |
+| 项目模板识别 | ✅ | 答辩/sprint/活动/上线 模板自动建议 |
+| 项目状态查询 | ✅ | pilotflow_query_status 工具 |
+| 消息走 Hermes | ✅ | registry.dispatch("send_message") |
 
 ## 技术决策
 
@@ -66,7 +69,7 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 | 基于 Hermes 而非自建 | 不重复造轮子，LLM + 工具调度开箱即用 | 受限于 Hermes 架构 |
 | lark_oapi SDK 而非 lark-cli | 零外部依赖，即插即用 | 需自己处理 API 错误 |
 | Python 而非 TypeScript | Hermes 生态全 Python | 放弃旧 TS 代码 |
-| mimo-v2.5-pro | 中文理解好，API 免费 | 偶尔不调工具（模型行为） |
+| gpt-5.5 | 工具调用稳定，中文能力强 | 需要 vectorcontrol API |
 | 插件而非 fork | 不改 Hermes 代码，cp -r 安装 | 无法修改 gateway 行为 |
 
 ## 项目结构
