@@ -167,16 +167,16 @@ LLM 输出一致性 + 项目看板可视化：
 - 在 hermes-agent 环境中实际测试发现并修复
 
 **v1.5 — 截止提醒 via Hermes cron jobs：**
-- `_schedule_deadline_reminder`: 项目创建时自动调度截止前 1 天提醒
+- `_schedule_deadline_reminder`: 项目创建时 best-effort 调度截止前 1 天提醒
 - 通过 `registry.dispatch("cronjob", {...})` 深度融合 Hermes 调度系统
 - 自动计算提醒时间：明天截止 → 1小时后提醒，远期 → 截止前1天 9:00 AM
 - 已过期项目跳过提醒
 
 **v1.6 — 互动确认卡片 with 按钮回调：**
-- 利用 Hermes gateway 的 card action callback 机制
+- 利用 Hermes gateway 的 card action callback 机制，并在插件侧注册 `/card` 桥接命令
 - 确认卡片发送在 `generate_plan` 阶段（正确时机）
 - 按钮点击被 gateway 路由为 `/card button {json}` 合成命令
-- LLM 处理合成命令并调用 `create_project_space`
+- 插件桥接处理合成命令并调用 `pilotflow_handle_card_action`
 
 **测试：**
 - 19 个单元测试 + 集成测试（全部通过）
@@ -201,7 +201,13 @@ LLM 输出一致性 + 项目看板可视化：
 - README 移除 star badge，避免公开仓库早期数据影响观感
 - `plugin.yaml` 同步到 1.12.0
 
-当前边界：以上能力已在代码和本地测试层面完成；仍需在真实飞书群里复测 v1.12 的 LLM 续跑、确认按钮、取消按钮和完整产物创建。
+当前边界：以上能力已在代码和本地测试层面完成；真实飞书已验证互动卡片发送、按钮确认续跑和原卡片状态更新，录屏与真实产物链接作为提交材料继续补齐。
+
+### 第十五阶段：产品化包装与交付口径（v1.13）
+
+- README / INSTALL / 复赛材料统一到 47 测试通过的当前口径
+- 真实飞书按钮确认、取消和原卡片状态反馈已经可演示
+- 对外文档改成“已验证 + 提交前补齐录屏与链接”，不再写成内部排障笔记
 
 ## 已验证能力
 
@@ -216,16 +222,17 @@ LLM 输出一致性 + 项目看板可视化：
 | 权限自管理 | ✅ | 链接可查看 + 群成员自动加编辑权限 |
 | 多维表格自建 | ✅ | 自动创建表格、字段、记录、权限 |
 | LLM 意图理解 | ✅ | Hermes OpenAI-compatible provider + pilotflow skill |
-| 端到端群聊触发 | 早期 live 已验证 | Hermes gateway WebSocket，约 30 秒创建核心项目产物；v1.12 需重新录屏 |
+| 端到端群聊触发 | 真实群已验证 | Hermes gateway WebSocket，约 30 秒创建核心项目产物 |
 | 确认门控 | ✅ | 代码级拦截 + 线程安全 + 按群聊隔离 |
 | 项目模板识别 | ✅ | 答辩/sprint/活动/上线 模板自动建议 |
 | 项目状态查询 | ✅ | 内存项目注册表 + 飞书任务 API 双源查询 |
 | 多轮项目更新 | ✅ | 注册表更新 + 多维表格 record.update + 群通知 |
-| Hermes Memory 写入 | ✅ | registry.dispatch("memory") 保存项目模式 |
+| Hermes Memory 写入 | ✅ | best-effort 调用 registry.dispatch("memory") 保存项目模式 |
 | Hermes Memory 读取 | 待验证 | 生成计划时读取历史模式、自动建议成员/交付物 |
 | 卡片 action 工具 | ✅ | `pilotflow_handle_card_action` 处理确认/取消 |
-| 卡片按钮 live 续跑 | 待验证 | 真实飞书按钮点击触发 LLM/工具链 |
-| 消息走 Hermes | ✅ | registry.dispatch("send_message") |
+| 卡片按钮续跑 | 真实按钮确认与原卡片状态更新已验证 | 插件 `/card` 桥接处理真实飞书按钮点击 |
+| 文本消息走 Hermes | ✅ | registry.dispatch("send_message") |
+| 互动卡片直发飞书 | ✅ | lark_oapi IM API，`msg_type=interactive` |
 | 安装脚本校验 | ✅ | 校验插件/skill 复制、`.env` 占位符、Hermes `config.yaml` |
 | Memory 隐私默认 | ✅ | 默认只保存成员数量，不持久化成员姓名 |
 
@@ -261,4 +268,4 @@ PilotFlow/
 | 日历集成 | 自动创建截止时间日历事件 |
 | 审批流 | 飞书审批 API 集成 |
 | Hermes memory 读取 | 记住并复用用户项目偏好 |
-| 互动卡片 live parity | 按钮点击真实续跑和取消 |
+| 互动卡片录屏 | 按钮点击真实续跑和取消 |
