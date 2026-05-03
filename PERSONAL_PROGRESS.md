@@ -209,6 +209,7 @@ LLM 输出一致性 + 项目看板可视化：
 - 真实飞书按钮确认、取消和原卡片状态反馈已经可演示
 - 对外文档改成“已验证 + 提交前补齐录屏与链接”，不再写成内部排障笔记
 - 2026-05-03 追加 lark-cli 真实状态查询验证：Bot 返回中文文本反馈和 `interactive` 项目看板卡片，脱敏证据写入 `docs/LIVE_TEST_EVIDENCE.md`
+- 2026-05-03 追加 lark-cli 真实文字确认创建验证：计划卡片、文字确认、已确认并创建卡片、项目入口卡片均在真实群出现
 
 ## 已验证能力
 
@@ -233,6 +234,7 @@ LLM 输出一致性 + 项目看板可视化：
 | 卡片 action 工具 | ✅ | `pilotflow_handle_card_action` 处理确认/取消 |
 | 卡片按钮续跑 | 真实按钮确认与原卡片状态更新已验证 | 插件 `/card` 桥接处理真实飞书按钮点击 |
 | 真实状态看板 | ✅ | lark-cli 群内状态查询，Bot 返回中文文本 + interactive 看板卡片 |
+| 文字确认创建 | ✅ | lark-cli 群内创建需求 + `确认执行`，Bot 返回项目入口卡片 |
 | 文本消息走 Hermes | ✅ | registry.dispatch("send_message") |
 | 互动卡片直发飞书 | ✅ | lark_oapi IM API，`msg_type=interactive` |
 | 安装脚本校验 | ✅ | 校验插件/skill 复制、`.env` 占位符、Hermes `config.yaml` |
