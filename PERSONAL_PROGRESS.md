@@ -4,7 +4,7 @@
 
 PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 说一句需求，LLM 自动理解意图，调用飞书 API 创建真实文档、任务和项目入口消息。
 
-**技术栈**：Hermes Agent（Python）+ lark_oapi SDK + gpt-5.5
+**技术栈**：Hermes Agent（Python）+ lark_oapi SDK + OpenAI-compatible LLM
 
 ## 开发历程
 
@@ -21,9 +21,9 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 
 将项目从 TypeScript 自建 Agent 重构为 Hermes Python 插件：
 - 研究 Hermes 源码，理解插件注册、工具调度、飞书网关机制
-- 用 `ctx.register_tool()` 注册 4 个 PilotFlow 工具
+- 用 `ctx.register_tool()` 注册 PilotFlow 工具
 - 配置 Hermes gateway 连接飞书 WebSocket
-- 配置 gpt-5.5 作为 LLM（通过 vectorcontrol API）
+- 配置 OpenAI-compatible LLM
 
 ### 第三阶段：插件完善（5月2日）
 
@@ -94,7 +94,7 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 - SKILL.md 移除冗余的 send_summary 步骤
 - INSTALL.md 补全缺失的飞书权限（bitable/drive/calendar）
 - INSTALL.md 修复验证命令（加 sys.path）
-- INSTALL.md 统一模型名为 gpt-5.5
+- INSTALL.md 统一模型配置说明
 
 ### 第七阶段：功能真实性修复（v0.9.2-v0.9.3）
 
@@ -102,7 +102,7 @@ PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 
 
 **v0.9.2 — 文档一致性修复：**
 - ARCHITECTURE.md 补全 6 个工具 + 多轮管理流程
-- README_EN.md 模型名统一为 gpt-5.5
+- README_EN.md 模型配置说明同步
 - PRODUCT_SPEC.md 移除已删除的互动按钮描述
 - INNOVATION.md 重新分类功能状态
 - query_status 新增内存项目注册表（解决 tenant token 无法查询任务的问题）
@@ -215,8 +215,8 @@ LLM 输出一致性 + 项目看板可视化：
 | @mention（文档内） | ✅ | docx mention_user 元素 |
 | 权限自管理 | ✅ | 链接可查看 + 群成员自动加编辑权限 |
 | 多维表格自建 | ✅ | 自动创建表格、字段、记录、权限 |
-| LLM 意图理解 | ✅ | gpt-5.5 + pilotflow skill |
-| 端到端群聊触发 | ✅ | Hermes gateway WebSocket，~30秒 5个产物 |
+| LLM 意图理解 | ✅ | Hermes OpenAI-compatible provider + pilotflow skill |
+| 端到端群聊触发 | 早期 live 已验证 | Hermes gateway WebSocket，约 30 秒创建核心项目产物；v1.12 需重新录屏 |
 | 确认门控 | ✅ | 代码级拦截 + 线程安全 + 按群聊隔离 |
 | 项目模板识别 | ✅ | 答辩/sprint/活动/上线 模板自动建议 |
 | 项目状态查询 | ✅ | 内存项目注册表 + 飞书任务 API 双源查询 |
@@ -226,6 +226,8 @@ LLM 输出一致性 + 项目看板可视化：
 | 卡片 action 工具 | ✅ | `pilotflow_handle_card_action` 处理确认/取消 |
 | 卡片按钮 live 续跑 | 待验证 | 真实飞书按钮点击触发 LLM/工具链 |
 | 消息走 Hermes | ✅ | registry.dispatch("send_message") |
+| 安装脚本校验 | ✅ | 校验插件/skill 复制、`.env` 占位符、Hermes `config.yaml` |
+| Memory 隐私默认 | ✅ | 默认只保存成员数量，不持久化成员姓名 |
 
 ## 技术决策
 
@@ -234,7 +236,7 @@ LLM 输出一致性 + 项目看板可视化：
 | 基于 Hermes 而非自建 | 不重复造轮子，LLM + 工具调度开箱即用 | 受限于 Hermes 架构 |
 | lark_oapi SDK 而非 lark-cli | 零外部依赖，即插即用 | 需自己处理 API 错误 |
 | Python 而非 TypeScript | Hermes 生态全 Python | 放弃旧 TS 代码 |
-| gpt-5.5 | 工具调用稳定，中文能力强 | 需要 vectorcontrol API |
+| OpenAI-compatible LLM | 跟随 Hermes provider 配置 | 不绑定特定私有服务 |
 | 插件而非 fork | 不改 Hermes 代码，通过 setup.py 安装到运行时 | 无法修改 gateway 行为 |
 
 ## 项目结构
