@@ -191,6 +191,18 @@ LLM 输出一致性 + 项目看板可视化：
 - 25 个测试全部通过（19 单元 + 6 集成）
 - README/INSTALL 更新为使用 setup.py 安装
 
+### 第十四阶段：状态收敛 + 卡片 action 工具（v1.11-v1.12）
+
+- 工具描述继续加强：`pilotflow_generate_plan` 默认发送确认卡片，并明确文字确认/卡片确认两条路径
+- 新增 `pilotflow_handle_card_action` 注册工具：处理 Hermes 合成的 `/card button {...}` 命令
+- 确认按钮从 `_pending_plans` 恢复参数，避免 LLM 重新提取导致字段漂移
+- 取消按钮清理确认门控和 pending plan，防止用户取消后仍能执行
+- Hermes memory 写入内容本地化，避免英文技术痕迹进入用户侧记忆
+- README 移除 star badge，避免公开仓库早期数据影响观感
+- `plugin.yaml` 同步到 1.12.0
+
+当前边界：以上能力已在代码和本地测试层面完成；仍需在真实飞书群里复测 v1.12 的 LLM 续跑、确认按钮、取消按钮和完整产物创建。
+
 ## 已验证能力
 
 | 能力 | 状态 | 技术实现 |
@@ -209,7 +221,10 @@ LLM 输出一致性 + 项目看板可视化：
 | 项目模板识别 | ✅ | 答辩/sprint/活动/上线 模板自动建议 |
 | 项目状态查询 | ✅ | 内存项目注册表 + 飞书任务 API 双源查询 |
 | 多轮项目更新 | ✅ | 注册表更新 + 多维表格 record.update + 群通知 |
-| Hermes Memory 集成 | ✅ | registry.dispatch("memory") 保存项目模式 |
+| Hermes Memory 写入 | ✅ | registry.dispatch("memory") 保存项目模式 |
+| Hermes Memory 读取 | 待验证 | 生成计划时读取历史模式、自动建议成员/交付物 |
+| 卡片 action 工具 | ✅ | `pilotflow_handle_card_action` 处理确认/取消 |
+| 卡片按钮 live 续跑 | 待验证 | 真实飞书按钮点击触发 LLM/工具链 |
 | 消息走 Hermes | ✅ | registry.dispatch("send_message") |
 
 ## 技术决策
@@ -220,7 +235,7 @@ LLM 输出一致性 + 项目看板可视化：
 | lark_oapi SDK 而非 lark-cli | 零外部依赖，即插即用 | 需自己处理 API 错误 |
 | Python 而非 TypeScript | Hermes 生态全 Python | 放弃旧 TS 代码 |
 | gpt-5.5 | 工具调用稳定，中文能力强 | 需要 vectorcontrol API |
-| 插件而非 fork | 不改 Hermes 代码，cp -r 安装 | 无法修改 gateway 行为 |
+| 插件而非 fork | 不改 Hermes 代码，通过 setup.py 安装到运行时 | 无法修改 gateway 行为 |
 
 ## 项目结构
 
@@ -243,5 +258,5 @@ PilotFlow/
 | 多轮项目管理 | 改截止时间、查状态、重新分配成员 |
 | 日历集成 | 自动创建截止时间日历事件 |
 | 审批流 | 飞书审批 API 集成 |
-| Hermes memory | 记住用户项目偏好 |
-| 互动卡片回调 | 按钮点击实时响应 |
+| Hermes memory 读取 | 记住并复用用户项目偏好 |
+| 互动卡片 live parity | 按钮点击真实续跑和取消 |
