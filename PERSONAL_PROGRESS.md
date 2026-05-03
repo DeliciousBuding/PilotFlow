@@ -157,6 +157,33 @@ LLM 输出一致性 + 项目看板可视化：
 - `_pending_plans` 过期清理（与确认门控同步驱逐）
 - 静默异常替换为 debug 日志
 
+### 第十二阶段：真实测试 + 深度 Hermes 集成（v1.4-v1.6）
+
+真实编码和测试发现的关键修复 + 深度 Hermes 能力融合：
+
+**v1.4 — 修复双重 JSON 编码 bug（关键）：**
+- `tool_result(json.dumps({...}))` 导致所有工具返回值被双重编码
+- 修复为 `tool_result({...})`，`tool_result` 内部调用 `json.dumps`
+- 在 hermes-agent 环境中实际测试发现并修复
+
+**v1.5 — 截止提醒 via Hermes cron jobs：**
+- `_schedule_deadline_reminder`: 项目创建时自动调度截止前 1 天提醒
+- 通过 `registry.dispatch("cronjob", {...})` 深度融合 Hermes 调度系统
+- 自动计算提醒时间：明天截止 → 1小时后提醒，远期 → 截止前1天 9:00 AM
+- 已过期项目跳过提醒
+
+**v1.6 — 互动确认卡片 with 按钮回调：**
+- 利用 Hermes gateway 的 card action callback 机制
+- 确认卡片发送在 `generate_plan` 阶段（正确时机）
+- 按钮点击被 gateway 路由为 `/card button {json}` 合成命令
+- LLM 处理合成命令并调用 `create_project_space`
+
+**测试：**
+- 19 个单元测试 + 集成测试（全部通过）
+- 在 hermes-agent 环境中测试完整流程
+- 测试 cron job 调度（6 种截止时间场景）
+- 测试互动卡片 JSON 结构
+
 ## 已验证能力
 
 | 能力 | 状态 | 技术实现 |
