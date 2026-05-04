@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-PilotFlow 是飞书群聊中的 AI 项目运行官。用户在群里 @PilotFlow 说一句需求，LLM 自动理解意图，调用飞书 API 创建真实文档、任务和项目入口消息。
+PilotFlow 是飞书群里的 AI 项目运行官。基于 Hermes Agent 运行时，通过飞书 OpenAPI 把群聊中的项目讨论推进成结构化计划、确认门控和真实飞书产物。
 
 **技术栈**：Hermes Agent（Python）+ lark_oapi SDK + OpenAI-compatible LLM
 
@@ -246,7 +246,7 @@ LLM 输出一致性 + 项目看板可视化：
 
 | 决策 | 原因 | 权衡 |
 | --- | --- | --- |
-| 基于 Hermes 而非自建 | 不重复造轮子，LLM + 工具调度开箱即用 | 受限于 Hermes 架构 |
+| 基于 Hermes 而非自建 | LLM 调度 + 工具注册开箱即用，专注业务逻辑 | 遵循 Hermes 插件边界，不修改运行时 |
 | lark_oapi SDK 而非 lark-cli | 零外部依赖，即插即用 | 需自己处理 API 错误 |
 | Python 而非 TypeScript | Hermes 生态全 Python | 放弃旧 TS 代码 |
 | OpenAI-compatible LLM | 跟随 Hermes provider 配置 | 不绑定特定私有服务 |
@@ -270,8 +270,8 @@ PilotFlow/
 
 | 方向 | 说明 |
 | --- | --- |
-| 多轮项目管理 | 改截止时间、查状态、重新分配成员 |
-| 日历集成 | 自动创建截止时间日历事件 |
-| 审批流 | 飞书审批 API 集成 |
-| Hermes memory 读取 | 记住并复用用户项目偏好 |
-| 互动卡片录屏 | 按钮点击真实续跑和取消 |
+| Hermes memory 读取 | 生成计划时读取历史项目模式，自动建议成员和交付物 |
+| Hermes 信号驱动项目化 | 聊天散落信号 → Hermes 结构化总结 → "要不要整理成项目？"建议卡 |
+| 审批流集成 | 飞书审批 API 集成 |
+| 移动端体验 | 卡片确认在移动端飞书的显示和交互优化 |
+| 自动化测试扩展 | 更多端到端场景覆盖 |
